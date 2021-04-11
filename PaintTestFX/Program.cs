@@ -16,6 +16,15 @@ namespace PaintTestFX
             // setup safe bounds
             Rectangle safeZone = GetSafeZone();
 
+            // get image to draw
+            Console.Write("Enter image path to draw:");
+            string bmpPath = Console.ReadLine();
+            Bitmap bmp = new Bitmap(bmpPath);
+
+            // scale down bitmap
+            bmp = ScaleBitmap(bmp, safeZone.Size);
+
+
             // wait for user
             Console.WriteLine("Ready. Enter to Start.");
             Console.ReadLine();
@@ -31,7 +40,7 @@ namespace PaintTestFX
             Console.Title = "Press ESC to cancel";
 
             // enable cursor and utillogs
-            Cursor.ENABLE_CW = true;
+            Cursor.ENABLE_CW = false;
             Util.ENABLE_CW = true;
 
             // init pain
@@ -39,17 +48,36 @@ namespace PaintTestFX
             {
                 Bounds = safeZone,
                 EnableCW = true,
-                MoveDelay = 10
+                MoveDelay = 0
             };
 
-            pain.SetStrokeWidth(2);
-            pain.ClearBounds();
-            pain.SetColor(255, 100, 90);
-            pain.EnterPaintMode();
-
+            // draw bitmap
+            pain.DrawBitmapWithDots(bmp, 2, 5);
 
             Console.WriteLine("done!");
             Console.ReadLine();
+        }
+
+        static Bitmap ScaleBitmap(Bitmap input, Size to)
+        {
+            // create new bitmap
+            Bitmap newBmp = new Bitmap(to.Width, to.Height);
+
+            // get graphics for new bitmap
+            using(Graphics g = Graphics.FromImage(newBmp))
+            {
+                // hig kwaliti
+                // as if this matters :P
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                // draw the image scaled
+                g.DrawImage(input, 0, 0, to.Width, to.Height);
+
+            }
+
+            return newBmp;
         }
 
         /// <summary>
