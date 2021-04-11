@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Windows.Media;
+
+using WPoint = System.Windows.Point;
 
 namespace PaintTestFX
 {
@@ -26,45 +23,22 @@ namespace PaintTestFX
         /// </summary>
         public int MoveDelay { get; set; } = 50;
 
+        /// <summary>
+        /// enable command logging to console
+        /// </summary>
+        public bool EnableCW { get; set; } = false;
+ 
         // region SVG Path
 
+        /// <summary>
+        /// attempt to draw a svg path (uses WPF geometry under the hood)
+        /// </summary>
+        /// <param name="path">the path to draw</param>
+        /// <param name="width">the viewport width</param>
+        /// <param name="height">the viewport height</param>
         public void DrawPath(string path, int width, int height)
         {
-            /* CUSTOM FUNCTION -> HARD
-            // these chars are all valid SVG commands. whenever we find one, a new command starts.
-            string separators = @"(?=[MZLHVCSQTAmzlhvcsqta])";
-
-            // split path string into command tokens
-            SVGToken[] pathTokens = Regex.Split(path, separators)
-                .Where(t => !string.IsNullOrWhiteSpace(t))
-                .Select(t => SVGToken.Parse(t))
-                .ToArray();
-
-            // run each command
-            SVGToken lastToken;
-            foreach (SVGToken token in pathTokens)
-            {
-                // commands
-                switch (token.Command)
-                {
-                    case 'm':
-                        // move relative
-                        break;
-                    case 'M':
-                        // move absolute
-                        break;
-                    case 'z':
-                    case 'Z':
-                        // close path
-                        break;
-
-                    default:
-                        // not supported
-                        Console.WriteLine("Unsupported Token: " + token.Command);
-                        break;
-                }
-            }
-            */
+            CW("CMD: DrawPath");
 
             // parse using WPF
             Geometry geometry = Geometry.Parse(path);
@@ -76,60 +50,56 @@ namespace PaintTestFX
                 // every segement
                 foreach (PathSegment seg in fig.Segments)
                 {
-
-
-                    Console.WriteLine("wat");
+                    CW($"Segment: {seg.GetType().Name}");
+                    DrawPolyBezier(seg as PolyBezierSegment, width, height);
                 }
             }
         }
 
-        class SVGToken
+        /// <summary>
+        /// draw a poly bezier (badly, that is)
+        /// </summary>
+        /// <param name="seg">the segment to draw</param>
+        /// <param name="width">the viewport width</param>
+        /// <param name="height">the viewport height</param>
+        void DrawPolyBezier(PolyBezierSegment seg, int width, int height)
         {
-            /// <summary>
-            /// command
-            /// </summary>
-            public char Command { get; private set; }
+            // check the segment is valid
+            if (seg == null)
+                return;
 
-            /// <summary>
-            /// command args
-            /// </summary>
-            public float[] Args { get; private set; }
-
-            public SVGToken(char cmd, params float[] args)
+            // prepare polygon to draw
+            PointF[] poly = seg.Points.Select(p =>
             {
-                Command = cmd;
-                Args = args;
-            }
+                // normalize point
+                p.X /= width;
+                p.Y /= height;
 
-            public static SVGToken Parse(string tokenStr)
-            {
-                //get command
-                char cmd = tokenStr.Take(1).Single();
+                // convert to PointF
+                return ToPoint(p);
+            }).ToArray();
 
-                // get the rest
-                string argsStr = tokenStr.Substring(1);
-
-                // split the args string and parse to floats
-                float[] args = Regex.Split(argsStr, @"[\s,]|(?=-)")
-                    .Where(t => !string.IsNullOrWhiteSpace(t))
-                    .Select(arg => float.Parse(arg))
-                    .ToArray();
-
-                // create token
-                return new SVGToken(cmd, args);
-            }
+            // draw polygon closed
+            DrawPolygon(verticies: poly);
         }
+
         //endregion
 
         /// <summary>
         /// draw a polygon
         /// </summary>
         /// <param name="verticies">the verticies</param>
-        public void DrawPolygon(params PointF[] verticies)
+        /// <param name="close">close the polygon after the draw?</param>
+        public void DrawPolygon(bool close = true, params PointF[] verticies)
         {
-            // mouse down
+            // start draw
+            CW("CMD: DrawPoly");
+
+            // move to first vert and mouse down
             DontFuckUpMyPC();
+            Cursor.MoveTo(ToScreenSpace(verticies[0]));
             Cursor.LMBDown();
+            Sleep();
 
             // move to each verticy
             foreach (PointF vert in verticies)
@@ -141,7 +111,8 @@ namespace PaintTestFX
 
             // move back to the first vert
             DontFuckUpMyPC();
-            Cursor.MoveTo(ToScreenSpace(verticies[0]));
+            if (close)
+                Cursor.MoveTo(ToScreenSpace(verticies[0]));
 
             // mouse up
             Cursor.LMBUp();
@@ -179,6 +150,16 @@ namespace PaintTestFX
         }
 
         /// <summary>
+        /// convert a WPF point to a Forms point
+        /// </summary>
+        /// <param name="point">the wpf point</param>
+        /// <returns>the forms point</returns>
+        PointF ToPoint(WPoint point)
+        {
+            return new PointF((float)point.X, (float)point.Y);
+        }
+
+        /// <summary>
         /// keep the host pc safe... call this before doing anything with the cursor
         /// </summary>
         /// <param name="throwIfBad">if true, the function throws a InvalidOperationExeption if something is bad</param>
@@ -207,6 +188,16 @@ namespace PaintTestFX
             }
 
             return isMsPaint;
+        }
+
+        /// <summary>
+        /// console write
+        /// </summary>
+        /// <param name="msg">message to write</param>
+        void CW(string msg)
+        {
+            if(EnableCW)
+                Console.WriteLine(msg);
         }
         //endregion
     }
