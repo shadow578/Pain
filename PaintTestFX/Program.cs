@@ -30,8 +30,9 @@ namespace PaintTestFX
             Console.WriteLine();
             Console.Title = "Press ESC to cancel";
 
-            // enable cursor logs
+            // enable cursor and utillogs
             Cursor.ENABLE_CW = true;
+            Util.ENABLE_CW = true;
 
             // init pain
             PainInterface pain = new PainInterface
@@ -41,6 +42,10 @@ namespace PaintTestFX
                 MoveDelay = 10
             };
 
+            pain.SetStrokeWidth(2);
+            pain.ClearBounds();
+            pain.SetColor(255, 100, 90);
+            pain.EnterPaintMode();
 
 
             Console.WriteLine("done!");

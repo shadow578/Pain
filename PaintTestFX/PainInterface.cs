@@ -2,6 +2,9 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
+using System.Windows.Forms;
+
+using FSendKeys = System.Windows.Forms.SendKeys;
 
 namespace PaintTestFX
 {
@@ -57,6 +60,99 @@ namespace PaintTestFX
             Cursor.LMBUp();
         }
 
+        /// <summary>
+        /// set the stroke width (0 for smallest, 3 for max)
+        /// </summary>
+        /// <param name="width">the stroke width to select</param>
+        public void SetStrokeWidth(int width)
+        {
+            // check bounds
+            if (width < 0 || width > 3)
+                throw new ArgumentOutOfRangeException("width has to be between 0 and 3");
+
+            // set stroke: ALT > R > SZ > n*DOWN > Enter
+            SendKeys(Keys.Menu, Keys.R, Keys.S, Keys.Z);
+            for (int i = 0; i < width; i++)
+                SendKeys(Keys.Down);
+            SendKeys(Keys.Enter);
+        }
+
+        /// <summary>
+        /// set the paint color
+        /// </summary>
+        /// <param name="r">red part</param>
+        /// <param name="g">green part</param>
+        /// <param name="b">blue part</param>
+        public void SetColor(byte r, byte g, byte b)
+        {
+            //edit pallet
+            //ALT > R > EC
+            SendKeys(Keys.Menu, Keys.R, Keys.E, Keys.C);
+
+            // go to input field for RED
+            // 7x TAB
+            SendKeys(Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab);
+
+            // send value for red
+            DontFuckUpMyPC();
+            FSendKeys.SendWait(r.ToString());
+
+            // go to field for GREEN
+            // 1x TAB
+            SendKeys(Keys.Tab);
+
+            // send value for green
+            FSendKeys.SendWait(g.ToString());
+
+            // go to field for BLUE
+            // 1x TAB
+            SendKeys(Keys.Tab);
+
+            // send value for blue
+            FSendKeys.SendWait(b.ToString());
+
+            // exit window with OK
+            // 2x TAB > ENTER
+            SendKeys(Keys.Tab, Keys.Tab, Keys.Enter);
+        }
+
+        /// <summary>
+        /// enter painting mode by selecting the default brush tool
+        /// </summary>
+        public void EnterPaintMode()
+        {
+            // select brush P1
+            // ALT > R > P1 > ENTER
+            SendKeys(Keys.Menu, Keys.R, Keys.P, Keys.D1, Keys.Enter);
+
+        }
+
+        /// <summary>
+        /// clear everything inside the bounds
+        /// </summary>
+        public void ClearBounds()
+        {
+            // select rectangle
+            // ALT > R > AU > R
+            SendKeys(Keys.Menu, Keys.R, Keys.A, Keys.U, Keys.R);
+
+            // move cursor to bounds top left and press LMB
+            DontFuckUpMyPC();
+            Cursor.MoveTo(Bounds.Location);
+            Sleep();
+            Cursor.LMBDown();
+            Sleep();
+
+            // move cursor to bounds bottom right and release LMB
+            Cursor.MoveTo(new Point(Bounds.X + Bounds.Width, Bounds.Y + Bounds.Height));
+            Sleep();
+            Cursor.LMBUp();
+
+            // delete 
+            // ALT > R > AU > S
+            SendKeys(Keys.Menu, Keys.R, Keys.A, Keys.U, Keys.S);
+        }
+
         #region util
         /// <summary>
         /// movement delay
@@ -86,6 +182,16 @@ namespace PaintTestFX
             y += Bounds.Y;
 
             return new Point(x, y);
+        }
+
+        /// <summary>
+        /// send keys.
+        /// </summary>
+        /// <param name="keys">the keys to press</param>
+        void SendKeys(params Keys[] keys)
+        {
+            DontFuckUpMyPC();
+            Util.SendKeys(25, keys);
         }
 
         /// <summary>
