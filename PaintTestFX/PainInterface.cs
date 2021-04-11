@@ -93,7 +93,7 @@ namespace PaintTestFX
         public void DrawPolygon(bool close = true, params PointF[] verticies)
         {
             // start draw
-            CW("CMD: DrawPoly");
+            CW($"CMD: DrawPoly, close: {close}, vertCoutn: {verticies.Length}");
 
             // move to first vert and mouse down
             DontFuckUpMyPC();
@@ -173,6 +173,12 @@ namespace PaintTestFX
             bool isMsPaint = !fg.HasExited && fg.MainModule.FileName.EndsWith(PAINT_EXE);
             if (!isMsPaint && throwIfBad)
                 throw new InvalidOperationException("Foreground process is not mspaint! aborting");
+
+
+            // check if abort (ESC) key was pressed
+            bool escape = Util.IsDown(System.Windows.Forms.Keys.Escape);
+            if (escape)
+                throw new InvalidOperationException("Escape ESC pressed");
 
             if (isMsPaint)
             {
