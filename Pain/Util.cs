@@ -7,6 +7,7 @@ using System.Threading;
 
 namespace PaintTestFX
 {
+    [Obsolete("Window and Keyboard")]
     static class Util
     {
         /// <summary>

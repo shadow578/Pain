@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace PaintTestFX
 {
+    [Obsolete("Mouse")]
     public static class Cursor
     {
         /// <summary>
@@ -55,7 +56,7 @@ namespace PaintTestFX
         /// </summary>
         public static void LMBDown()
         {
-            //SendMouseEvent(MouseEventFlags.LeftDown);
+            SendMouseEvent(MouseEventFlags.LeftDown);
             CW("LMBDown");
         }
 
