@@ -1,4 +1,8 @@
 # Pain
+Painfully render a image using MS Paint
+
+> This Program assumes you use the german version of MS Paint that ships with Windows 10 2009.
+> Other Languages or version may not work without adjustments
 
 ## License
 > Copyright 2021 shadow578

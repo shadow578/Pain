@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Pain;
+using System;
 using System.Drawing;
 using System.Threading;
-using System.Windows.Forms;
 
 namespace PaintTestFX
 {
@@ -9,20 +9,25 @@ namespace PaintTestFX
     {
         static void Main(string[] args)
         {
-            // wait for user
-            Console.WriteLine("Enter to start setup");
-            Console.ReadLine();
+            //saf: 2173/403 --> 2804/675
+            Thread.Sleep(5000);
+            Cursor.MoveTo(new Point(2173, 403));
+            Cursor.LMBDown();
+            Thread.Sleep(50);
+            Cursor.MoveTo(new Point(2804, 675));
+            Cursor.LMBUp();
+
 
             // setup safe bounds
             Rectangle safeZone = GetSafeZone();
 
             // get image to draw
-            Console.Write("Enter image path to draw:");
-            string bmpPath = Console.ReadLine();
-            Bitmap bmp = new Bitmap(bmpPath);
+            //Console.Write("Enter image path to draw:");
+            //string bmpPath = Console.ReadLine();
+            //Bitmap bmp = new Bitmap(bmpPath);
 
             // scale down bitmap
-            bmp = ScaleBitmap(bmp, safeZone.Size);
+            //bmp = ScaleBitmap(bmp, safeZone.Size);
 
 
             // wait for user
@@ -40,7 +45,7 @@ namespace PaintTestFX
             Console.Title = "Press ESC to cancel";
 
             // enable cursor and utillogs
-            Cursor.ENABLE_CW = false;
+            Cursor.ENABLE_CW = true;
             Util.ENABLE_CW = true;
 
             // init pain
@@ -48,11 +53,15 @@ namespace PaintTestFX
             {
                 Bounds = safeZone,
                 EnableCW = true,
-                MoveDelay = 0
+                MoveDelay = 1000
             };
 
             // draw bitmap
-            pain.DrawBitmapWithDots(bmp, 2, 5);
+            //pain.DrawBitmapWithDots(bmp, 2, 5);
+            pain.SetColor(255, 0, 0);
+            pain.SetStrokeWidth(2);
+            pain.EnterPaintMode();
+            pain.DrawPolygon(verticies: new PointF[] { new PointF(0, 0), new PointF(0.5f, 0.5f), new PointF(0, 1), new PointF(1, 1) });
 
             Console.WriteLine("done!");
             Console.ReadLine();
@@ -86,9 +95,18 @@ namespace PaintTestFX
         /// <returns>the safe bounds</returns>
         static Rectangle GetSafeZone()
         {
+            // wait for user
+            Console.WriteLine("Press <SPACE> to start setting up the safe zone");
+            while (!Util.IsDown(VK.Space))
+                Thread.Sleep(500);
+
+            Console.WriteLine("OK, release now");
+            while (Util.IsDown(VK.Space))
+                Thread.Sleep(500);
+
             // top left
             Console.WriteLine("Move the cursor to the TOP LEFT corner of your safe zone and click LMB");
-            while (!Util.IsDown(Keys.LButton))
+            while (!Util.IsDown(VK.LeftButton))
             {
                 Point p = Cursor.GetCursorPos();
                 Console.Write($"START_POS: {p.X} / {p.Y}      ");
@@ -99,11 +117,12 @@ namespace PaintTestFX
             Point topLeft = Cursor.GetCursorPos();
 
             Console.WriteLine("\nOk, release now");
-            Thread.Sleep(2000);
+            while(Util.IsDown(VK.LeftButton))
+                Thread.Sleep(100);
 
             // bottom right
             Console.WriteLine("Move the cursor to the BOTTOM RIGHT corner of your safe zone and click LMB");
-            while (!Util.IsDown(Keys.LButton))
+            while (!Util.IsDown(VK.LeftButton))
             {
                 Point p = Cursor.GetCursorPos();
                 Console.Write($"END_POS: {p.X} / {p.Y}      ");
@@ -114,7 +133,8 @@ namespace PaintTestFX
             Point bottomRight = Cursor.GetCursorPos();
 
             Console.WriteLine("\nOk, release now");
-            Thread.Sleep(2000);
+            while (Util.IsDown(VK.LeftButton))
+                Thread.Sleep(100);
 
             // get rect
             Rectangle rect = new Rectangle(topLeft.X, topLeft.Y, bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Pain;
+using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
@@ -54,7 +55,7 @@ namespace PaintTestFX
         /// </summary>
         public static void LMBDown()
         {
-            SendMouseEvent(MouseEventFlags.LeftDown);
+            //SendMouseEvent(MouseEventFlags.LeftDown);
             CW("LMBDown");
         }
 
@@ -91,8 +92,8 @@ namespace PaintTestFX
         /// <param name="p">the point on screen to move to</param>
         public static void MoveTo(Point p)
         {
-            _SetCursorPos(p.X, p.Y);
-            CW($"MOV {p.X} / {p.Y}");
+            bool ok = _SetCursorPos(p.X, p.Y);
+            CW($"MOV {p.X} / {p.Y}  OK: {ok}");
         }
 
         /// <summary>

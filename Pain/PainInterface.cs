@@ -1,12 +1,10 @@
-﻿using System;
+﻿using Pain;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
-using System.Windows.Forms;
-
-using FSendKeys = System.Windows.Forms.SendKeys;
 
 namespace PaintTestFX
 {
@@ -228,10 +226,10 @@ namespace PaintTestFX
 
             // set stroke: ALT > R > SZ > n*DOWN > Enter
             DontFuckUpMyPC();
-            SendKeys(Keys.Menu, Keys.R, Keys.S, Keys.Z);
+            SendKeys(VK.Menu, VK.R, VK.S, VK.Z);
             for (int i = 0; i < width; i++)
-                SendKeys(Keys.Down);
-            SendKeys(Keys.Enter);
+                SendKeys(VK.Down);
+            SendKeys(VK.Return);
         }
 
         /// <summary>
@@ -247,39 +245,39 @@ namespace PaintTestFX
             //edit pallet
             //ALT > R > EC
             DontFuckUpMyPC();
-            SendKeys(Keys.Menu, Keys.R, Keys.E, Keys.C);
+            SendKeys(VK.Menu, VK.R, VK.E, VK.C);
 
             // go to input field for RED
             // 7x TAB
             DontFuckUpMyPC();
-            SendKeys(Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab, Keys.Tab);
+            SendKeys(VK.Tab, VK.Tab, VK.Tab, VK.Tab, VK.Tab, VK.Tab, VK.Tab);
 
             // send value for red
             DontFuckUpMyPC();
-            FSendKeys.SendWait(r.ToString());
+            Util.SendKeys(25, r.ToString());
 
             // go to field for GREEN
             // 1x TAB
             DontFuckUpMyPC();
-            SendKeys(Keys.Tab);
+            SendKeys(VK.Tab);
 
             // send value for green
             DontFuckUpMyPC();
-            FSendKeys.SendWait(g.ToString());
+            Util.SendKeys(25, g.ToString());
 
             // go to field for BLUE
             // 1x TAB
             DontFuckUpMyPC();
-            SendKeys(Keys.Tab);
+            SendKeys(VK.Tab);
 
             // send value for blue
             DontFuckUpMyPC();
-            FSendKeys.SendWait(b.ToString());
+            Util.SendKeys(25, b.ToString());
 
             // exit window with OK
             // 2x TAB > ENTER
             DontFuckUpMyPC();
-            SendKeys(Keys.Tab, Keys.Tab, Keys.Enter);
+            SendKeys(VK.Tab, VK.Tab, VK.Return);
         }
 
         /// <summary>
@@ -292,7 +290,7 @@ namespace PaintTestFX
             // select brush P1
             // ALT > R > P1 > ENTER
             DontFuckUpMyPC();
-            SendKeys(Keys.Menu, Keys.R, Keys.P, Keys.D1, Keys.Enter);
+            SendKeys(VK.Menu, VK.R, VK.P, VK.N1, VK.Return);
 
         }
 
@@ -306,7 +304,7 @@ namespace PaintTestFX
             // select rectangle
             // ALT > R > AU > R
             DontFuckUpMyPC();
-            SendKeys(Keys.Menu, Keys.R, Keys.A, Keys.U, Keys.R);
+            SendKeys(VK.Menu, VK.R, VK.A, VK.U, VK.R);
 
             // move cursor to bounds top left and press LMB
             DontFuckUpMyPC();
@@ -323,7 +321,7 @@ namespace PaintTestFX
             // delete 
             // ALT > R > AU > S
             DontFuckUpMyPC();
-            SendKeys(Keys.Menu, Keys.R, Keys.A, Keys.U, Keys.S);
+            SendKeys(VK.Menu, VK.R, VK.A, VK.U, VK.S);
         }
 
         /// <summary>
@@ -337,7 +335,7 @@ namespace PaintTestFX
             // select bucket tool
             // ALT > R > FF
             DontFuckUpMyPC();
-            SendKeys(Keys.Menu, Keys.R, Keys.F, Keys.F);
+            SendKeys(VK.Menu, VK.R, VK.F, VK.F);
             Sleep();
 
             // move to position and press LMB for a moment
@@ -382,10 +380,10 @@ namespace PaintTestFX
         }
 
         /// <summary>
-        /// send keys.
+        /// send VK.
         /// </summary>
         /// <param name="keys">the keys to press</param>
-        void SendKeys(params Keys[] keys)
+        void SendKeys(params VK[] keys)
         {
             DontFuckUpMyPC();
             Util.SendKeys(25, keys);
@@ -408,7 +406,7 @@ namespace PaintTestFX
 
 
             // check if abort (ESC) key was pressed
-            bool escape = Util.IsDown(Keys.Escape);
+            bool escape = Util.IsDown(VK.Escape);
             if (escape)
                 throw new InvalidOperationException("Escape ESC pressed");
 
