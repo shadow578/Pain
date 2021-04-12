@@ -42,7 +42,7 @@
         /// set the stroke width
         /// </summary>
         /// <param name="val">the stroke width. range 0 - 3</param>
-        void SetStrokeWidth(byte val);
+        void SetStrokeWidth(int val);
 
         /// <summary>
         /// select the paint brush tool.

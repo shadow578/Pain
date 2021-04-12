@@ -111,6 +111,7 @@ namespace Pain.Driver
             KeyDown(key);
             Thread.Sleep(KeyDelay);
             KeyUp(key);
+            Thread.Sleep(KeyDelay);
         }
 
         /// <summary>

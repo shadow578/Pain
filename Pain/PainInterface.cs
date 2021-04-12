@@ -8,6 +8,7 @@ using System.Threading;
 
 namespace PaintTestFX
 {
+    [Obsolete("MSPain")]
     public class PainInterface
     {
         const string PAINT_EXE = "mspaint.exe";

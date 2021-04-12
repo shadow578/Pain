@@ -11,6 +11,92 @@ namespace Pain.Interface.MSPaint
     /// </summary>
     public class MSPain : IDrawTarget
     {
+        #region Init
+
+        /// <summary>
+        /// create a new instance with safezone from user input
+        /// </summary>
+        /// <param name="cmd">paint command abstractions instance</param>
+        /// <returns>the instance</returns>
+        public static MSPain Create(IPaintControlCommands cmd)
+        {
+            return Create(GetSafeZone(), cmd);
+        }
+
+        /// <summary>
+        /// create a new instance
+        /// </summary>
+        /// <param name="safeZone">the screen bounds</param>
+        /// <param name="cmd">paint command abstractions instance</param>
+        /// <returns>the instance</returns>
+        public static MSPain Create(Rectangle safeZone, IPaintControlCommands cmd)
+        {
+            return new MSPain
+            {
+                Bounds = safeZone,
+                Commands = cmd
+            };
+        }
+
+        /// <summary>
+        /// Get the safe zone on screen from user input
+        /// </summary>
+        /// <returns>the safe zone</returns>
+        static Rectangle GetSafeZone()
+        {
+            // wait for user
+            Console.WriteLine("Press <SPACE> to start setting up the safe zone");
+            while (!Keyboard.IsDown(VK.Space))
+                Thread.Sleep(50);
+
+            Console.WriteLine("OK, release now");
+            while (Keyboard.IsDown(VK.Space))
+                Thread.Sleep(50);
+
+            // get top left
+            Console.WriteLine("Move the cursor to the TOP LEFT corner of your safe zone and click LMB");
+            while (!Keyboard.IsDown(VK.LeftButton))
+            {
+                Point p = Mouse.GetPosition();
+                Console.Write($"Position: {p.X} / {p.Y}      ");
+                Console.CursorLeft = 0;
+                Thread.Sleep(50);
+            }
+
+            // get pos and make user release button
+            Point topLeft = Mouse.GetPosition();
+            Console.WriteLine("\nOk, release now");
+            while (Keyboard.IsDown(VK.LeftButton))
+                Thread.Sleep(50);
+
+            // get bottom right
+            Console.WriteLine("Move the cursor to the BOTTOM RIGHT corner of your safe zone and click LMB");
+            while (!Keyboard.IsDown(VK.LeftButton))
+            {
+                Point p = Mouse.GetPosition();
+                Console.Write($"Position: {p.X} / {p.Y}      ");
+                Console.CursorLeft = 0;
+                Thread.Sleep(50);
+            }
+
+            // get pos and make user release button
+            Point bottomRight = Mouse.GetPosition();
+            Console.WriteLine("\nOk, release now");
+            while (Keyboard.IsDown(VK.LeftButton))
+                Thread.Sleep(50);
+
+            // create and return rectangle
+            Rectangle zone = new Rectangle(topLeft.X, topLeft.Y, bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
+            Console.WriteLine($"Safe zone is: X: {zone.X} Y: {zone.Y} W: {zone.Width} H: {zone.Height}");
+            return zone;
+        }
+
+        private MSPain()
+        {
+
+        }
+        #endregion
+
         /// <summary>
         /// enable command logging to console
         /// </summary>
@@ -19,12 +105,7 @@ namespace Pain.Interface.MSPaint
         /// <summary>
         /// path to the paint executeable
         /// </summary>
-        public string PaintPath { get; set; } = @"C:\Windows\System32\mspaint.exe";
-
-        /// <summary>
-        /// the bounds we are allowed to work in
-        /// </summary>
-        public Rectangle Bounds { get; set; }
+        public string PaintPath { get; } = @"C:\Windows\System32\mspaint.exe";
 
         /// <summary>
         /// millisecond delay between mouse moves
@@ -32,9 +113,14 @@ namespace Pain.Interface.MSPaint
         public int MoveDelay { get; set; } = 50;
 
         /// <summary>
+        /// the bounds we are allowed to work in
+        /// </summary>
+        public Rectangle Bounds { get; private set; }
+
+        /// <summary>
         /// the ms paint commands abstraction
         /// </summary>
-        public IPaintControlCommands Commands { get; set; }
+        public IPaintControlCommands Commands { get; private set; }
 
         /// <summary>
         /// like <see cref="Commands"/>, but calls <see cref="DontBreakStuffPls"/> first
@@ -47,6 +133,12 @@ namespace Pain.Interface.MSPaint
                 return Commands;
             }
         }
+
+        /// <summary>
+        /// Flag to indicate if we are drawing with the primary color
+        /// == use left instead of right mouse button
+        /// </summaryt
+        private bool paintInPrimary = true;
 
         #region IDrawTarget
         /// <summary>
@@ -79,7 +171,8 @@ namespace Pain.Interface.MSPaint
         public void SelectPrimaryColor()
         {
             Log("SelectPrimaryColor");
-            Cmd.SelectPrimaryColor();
+            //Cmd.SelectPrimaryColor();
+            paintInPrimary = true;
         }
 
         /// <summary>
@@ -88,7 +181,8 @@ namespace Pain.Interface.MSPaint
         public void SelectSecondaryColor()
         {
             Log("SelectSecondaryColor");
-            Cmd.SelectSecondaryColor();
+            //Cmd.SelectSecondaryColor();
+            paintInPrimary = false;
         }
 
         /// <summary>
@@ -129,7 +223,7 @@ namespace Pain.Interface.MSPaint
         /// <param name="width">stroke width, range 0.0 - 1.0</param>
         public void SetStroke(float width)
         {
-            byte w = (byte)Math.Floor(width * 3);
+            int w = (int)Math.Floor(width * 3);
             Log($"SetStroke {width} ({w})");
             Cmd.SetStrokeWidth(w);
         }
@@ -150,8 +244,9 @@ namespace Pain.Interface.MSPaint
             MoveSleep();
 
             // mouse down, then up
-            MouseDown();
-            MouseUp();
+            // use LMB for primary color and RMB for secondary color
+            MouseDown(paintInPrimary);
+            MouseUp(paintInPrimary);
 
             // change back to paintbrush
             Cmd.SelectPaintBrush();
@@ -166,12 +261,13 @@ namespace Pain.Interface.MSPaint
             Log($"DrawDot X: {at.X} Y: {at.Y}");
 
             // move to position
+            DontBreakStuffPls();
             Mouse.MoveTo(PointToScreen(at));
             MoveSleep();
 
             // mouse down, then up
-            MouseDown();
-            MouseUp();
+            MouseDown(paintInPrimary);
+            MouseUp(paintInPrimary);
         }
 
         /// <summary>
@@ -190,41 +286,53 @@ namespace Pain.Interface.MSPaint
             DontBreakStuffPls();
             Mouse.MoveTo(PointToScreen(vertices[0]));
             MoveSleep();
-            MouseDown();
+            MouseDown(paintInPrimary);
 
             // each vert
-            DontBreakStuffPls();
             foreach (PointF vert in vertices)
             {
                 // move to position
+                DontBreakStuffPls();
                 Mouse.MoveTo(PointToScreen(vert));
                 MoveSleep();
             }
 
             // mouse up again
-            MouseUp();
+            MouseUp(paintInPrimary);
         }
         #endregion
 
         #region Util
         /// <summary>
-        /// LMB down abstraction.
-        /// because we have the choice between LMB and Space for this one
+        /// mouse button down abstraction.
+        /// because we have the choice between LMB / Space for primary color and RMB for secondary color
         /// </summary>
-        void MouseDown()
+        /// <param name="lmb">use left mouse button? if false, rmb is used</param>
+        void MouseDown(bool lmb = true)
         {
-            //Keyboard.KeyDown(VK.Space);
-            Mouse.PressLeftButton();
+            if (lmb)
+            {
+                //Keyboard.KeyDown(VK.Space);
+                Mouse.PressLeftButton();
+            }
+            else
+                Mouse.PressRightButton();
         }
 
         /// <summary>
-        /// LBM up abstraction.
-        /// because we have the choice between LMB and Space for this one
+        /// mouse button up abstraction.
+        /// because we have the choice between LMB / Space for primary color and RMB for secondary color
         /// </summary>
-        void MouseUp()
+        /// <param name="lmb">use left mouse button? if false, rmb is used</param>
+        void MouseUp(bool lmb = true)
         {
-            //Keyboard.KeyUp(VK.Space);
-            Mouse.ReleaseLeftButton();
+            if (lmb)
+            {
+                //Keyboard.KeyUp(VK.Space);
+                Mouse.ReleaseLeftButton();
+            }
+            else
+                Mouse.ReleaseRightButton();
         }
 
         /// <summary>
@@ -232,8 +340,7 @@ namespace Pain.Interface.MSPaint
         /// </summary>
         void MoveSleep()
         {
-            if (MoveDelay > 0)
-                Thread.Sleep(MoveDelay);
+            Thread.Sleep(MoveDelay);
         }
 
         /// <summary>
@@ -284,7 +391,7 @@ namespace Pain.Interface.MSPaint
             Process foreground = Window.GetForegroundProcess();
 
             // check the foreground process is paint and not exited
-            if (foreground.HasExited || foreground.MainModule.FileName.Equals(PaintPath, StringComparison.OrdinalIgnoreCase))
+            if (foreground.HasExited || !foreground.MainModule.FileName.Equals(PaintPath, StringComparison.OrdinalIgnoreCase))
                 throw new ApplicationException("Foreground process was not MS Paint");
 
             // keep cursor inside safe bounds

@@ -5,9 +5,10 @@ using System.Threading;
 
 namespace PaintTestFX
 {
+    [Obsolete("App")]
     class Program
     {
-        static void Main(string[] args)
+        static void MainOLD(string[] args)
         {
             //saf: 2173/403 --> 2804/675
             Thread.Sleep(5000);
