@@ -36,12 +36,12 @@ namespace Pain
             // setup delays
             // don't set MoveDelay to 0 unless you have a fast PC, as paint struggles at such speeds :P
             pain.MoveDelay = 0;
-            Keyboard.KeyDelay = 25;
+            Keyboard.KeyDelay = 35;
 
             // create dotmap
             Console.WriteLine("preparing dotmap...");
             DotMap dotMap = DotMap.Of(imageToDraw, pain.Bounds.Size, .2f, 2)
-                .Optimize(128);
+                .Optimize(128, ColorComparisions.DeltaE);
 
             // wait for user
             Console.WriteLine("Ready. Enter to Start");

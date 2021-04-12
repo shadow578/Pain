@@ -115,12 +115,27 @@ namespace Pain.Draw
         }
 
         /// <summary>
-        /// optimize the dotmap to use less unique colors
+        /// optimize the dotmap to use less unique colors.
+        /// Uses <see cref="ColorComparisions.Euclidean(Color, Color)"/> comparison function
         /// </summary>
         /// <param name="maxUniqueColors">the max number of unique colors to use</param>
         /// <returns>the dotmap instance reference</returns>
         public DotMap Optimize(int maxUniqueColors)
         {
+            return Optimize(maxUniqueColors, ColorComparisions.Euclidean);
+        }
+
+        /// <summary>
+        /// optimize the dotmap to use less unique colors
+        /// </summary>
+        /// <param name="maxUniqueColors">the max number of unique colors to use</param>
+        /// <param name="colorComparison">function to compare colors</param>
+        /// <returns>the dotmap instance reference</returns>
+        public DotMap Optimize(int maxUniqueColors, Func<Color, Color, float> colorComparison)
+        {
+            if (colorComparison == null)
+                throw new ArgumentNullException("color comparision function is required");
+
             // get keys ordered by dot count 
             // so that .First() has the most dots
             List<Color> colorsOrdered = dotMap.Keys.ToList().OrderByDescending(cx => dotMap[cx].Count).ToList();
@@ -139,7 +154,7 @@ namespace Pain.Draw
                 foreach (Color c in colorsOrdered)
                 {
                     // calculate and compare distance
-                    float distance = ColorDistance(colorToMap, c);
+                    float distance = colorComparison.Invoke(colorToMap, c);
                     if (distance < nearestDistance)
                     {
                         nearestDistance = distance;
@@ -222,22 +237,6 @@ namespace Pain.Draw
             }
 
             return dots.Count;
-        }
-
-        /// <summary>
-        /// Get the distance between two colors
-        /// </summary>
-        /// <param name="a">the first color</param>
-        /// <param name="b">the second color</param>
-        /// <returns>the distance between the colors</returns>
-        private float ColorDistance(Color a, Color b)
-        {
-            //TODO change to some better algorithm
-            float rsum = a.R - b.R;
-            float gsum = a.G - b.G;
-            float bsum = a.B - b.B;
-
-            return (rsum * rsum) + (gsum * gsum) + (bsum * bsum);
         }
 
         /// <summary>
