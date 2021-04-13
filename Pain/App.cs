@@ -18,7 +18,7 @@ namespace Pain
         {
             if (true)
             {
-                MainVideo();
+                CheatApp.CheatMain();
                 return;
             }
 
