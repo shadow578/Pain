@@ -63,12 +63,18 @@ namespace Pain.Draw
                     dots[px].Add(pos);
                 }
 
-            return new DotMap(dots);
+            return new DotMap(dots, new SizeF(scaledW, scaledH));
         }
 
         private DotMap()
         {
 
+        }
+
+        private DotMap(Dictionary<Color, List<PointF>> dotsDict, SizeF size)
+        {
+            dotMap = dotsDict;
+            mapSize = size;
         }
         #endregion
 
@@ -104,15 +110,15 @@ namespace Pain.Draw
         private readonly Dictionary<Color, List<PointF>> dotMap;
 
         /// <summary>
+        /// the size of the dotmap, in dots
+        /// </summary>
+        private readonly SizeF mapSize;
+
+        /// <summary>
         /// progress listener
         /// value is range 0.0 - 1.0
         /// </summary>
         public event Action<double> Progress;
-
-        private DotMap(Dictionary<Color, List<PointF>> dotsDict)
-        {
-            dotMap = dotsDict;
-        }
 
         #region Optimize
         /// <summary>
@@ -193,7 +199,7 @@ namespace Pain.Draw
                 // based on https://stackoverflow.com/a/1262619
                 List<PointF> dots = dotMap[c];
                 int n = dots.Count;
-                while(n > 1)
+                while (n > 1)
                 {
                     n--;
                     int k = rnd.Next(n + 1);
@@ -224,7 +230,6 @@ namespace Pain.Draw
                     // X 0 ==> X 1
                     return d1.X.CompareTo(d2.X);
                 });
-
             }
 
             return this;
@@ -269,9 +274,85 @@ namespace Pain.Draw
                     }
 
                     // draw all dots
-                    dotsDrawn += DrawUsingDots(target, dotMap[c], totalDots, dotsDrawn);
+                    dotsDrawn += DrawUsingPolys(target, dotMap[c], totalDots, dotsDrawn);
                     ReportProgress(dotsDrawn / totalDots);
                 }
+        }
+
+        /// <summary>
+        /// Draw a list of dots by drawing polygons
+        /// </summary>
+        /// <param name="target">draw target</param>
+        /// <param name="dots">the dot list</param>
+        /// <param name="totalDots">the total number of dots (progress reporting)</param>
+        /// <param name="dotsDrawn">the total number of dots drawn (progress reporting)</param>
+        /// <returns>the number of dots drawn</returns>
+        private int DrawUsingPolys(IDrawTarget target, List<PointF> dots, double totalDots, double dotsDrawn)
+        {
+            // sort dots by x, then y
+            dots.Sort((d1, d2) =>
+            {
+                // Y 0 ==> Y 1
+                if (d1.X.Equals(d2.X))
+                    return d1.Y.CompareTo(d2.Y);
+
+                // X 0 ==> X 1
+                return d1.X.CompareTo(d2.X);
+            });
+
+            // get the size of one dot
+            // keep the sizes squared to safe (a few) sqrts
+            float dotW = 1 / mapSize.Width;
+            float dotH = 1 / mapSize.Height;
+            float oneDotDiagonally = MathF.Abs((dotW * dotW) + (dotH * dotH));
+
+            // enumerate all dots, top to bottom and left to right
+            List<PointF> poly = new List<PointF>();
+            foreach (PointF dot in dots)
+            {
+                // first dot requires special handling...
+                if (poly.Count <= 0)
+                {
+                    poly.Add(dot);
+                    continue;
+                }
+
+                // get distance to last dot
+                float dist = DotDistanceSq(dot, poly.Last());
+
+                // if the dot is less than 1 dot (diagonally) away from the last, just add it to the polygon
+                // otherwise, draw the polygon, and start a new one
+                if (MathF.Abs(dist) > oneDotDiagonally)
+                {
+                    // remove all dots in the poly that are not needed for the path
+                    // always keep the first and last dot
+                    for (int i = 1; i < (poly.Count - 1); i++)
+                    {
+                        PointF c = poly[i];
+                        foreach (PointF n in poly)
+                            if (MathF.Abs(c.Y - n.Y) <= dotH)
+                            {
+                                poly.Remove(c);
+                                break;
+                            }
+                    }
+
+                    // draw and reset poly
+                    target.DrawPoly(poly.ToArray());
+                    poly.Clear();
+
+                    // report progress
+                    ReportProgress(dotsDrawn / totalDots);
+                }
+
+                // add dot to poly
+                poly.Add(dot);
+                dotsDrawn++;
+            }
+
+            // draw the last polygon
+            target.DrawPoly(poly.ToArray());
+            return dots.Count;
         }
 
         /// <summary>
@@ -298,6 +379,17 @@ namespace Pain.Draw
             return dots.Count;
         }
         #endregion
+
+        /// <summary>
+        /// Get the squared distance between two dots
+        /// </summary>
+        /// <param name="a">the first dot</param>
+        /// <param name="b">the second dot</param>
+        /// <returns>the distance, squared</returns>
+        private float DotDistanceSq(PointF a, PointF b)
+        {
+            return MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2);
+        }
 
         /// <summary>
         /// report the progress to the progress listener

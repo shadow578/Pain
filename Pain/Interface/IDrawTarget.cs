@@ -8,6 +8,11 @@ namespace Pain.Interface
     public interface IDrawTarget
     {
         /// <summary>
+        /// get the normalized size of one pixel, assuming square pixels
+        /// </summary>
+        float OnePixel { get; }
+
+        /// <summary>
         /// set the current primary color.
         /// does not select the primary color
         /// </summary>

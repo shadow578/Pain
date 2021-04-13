@@ -140,7 +140,24 @@ namespace Pain.Interface.MSPaint
         /// </summaryt
         private bool paintInPrimary = true;
 
+        /// <summary>
+        /// is the brush tool currently safe to be selected?
+        /// </summary>
+        private bool isBrushSelected = false;
+
         #region IDrawTarget
+
+        /// <summary>
+        /// get the normalized size of one pixel, assuming square pixels
+        /// </summary>
+        public float OnePixel
+        {
+            get
+            {
+                return 1 / Bounds.Width;
+            }
+        }
+
         /// <summary>
         /// set the current primary color.
         /// does not select the primary color
@@ -151,6 +168,7 @@ namespace Pain.Interface.MSPaint
             Log("SetPrimaryColor");
             Cmd.SelectPrimaryColor();
             Cmd.SetColorRGB(color.R, color.G, color.B);
+            isBrushSelected = false;
         }
 
         /// <summary>
@@ -163,6 +181,7 @@ namespace Pain.Interface.MSPaint
             Log("SetSecondaryColor");
             Cmd.SelectSecondaryColor();
             Cmd.SetColorRGB(color.R, color.G, color.B);
+            isBrushSelected = false;
         }
 
         /// <summary>
@@ -213,8 +232,7 @@ namespace Pain.Interface.MSPaint
             // delete selection
             Cmd.DeleteSelection();
 
-            // change back to paintbrush
-            Cmd.SelectPaintBrush();
+            isBrushSelected = false;
         }
 
         /// <summary>
@@ -223,9 +241,13 @@ namespace Pain.Interface.MSPaint
         /// <param name="width">stroke width, range 0.0 - 1.0</param>
         public void SetStroke(float width)
         {
+            // make sure paintbrush is selected
+            RequireBrush();
+
             int w = (int)Math.Floor(width * 3);
             Log($"SetStroke {width} ({w})");
             Cmd.SetStrokeWidth(w);
+            isBrushSelected = false;
         }
 
         /// <summary>
@@ -248,8 +270,7 @@ namespace Pain.Interface.MSPaint
             MouseDown(paintInPrimary);
             MouseUp(paintInPrimary);
 
-            // change back to paintbrush
-            Cmd.SelectPaintBrush();
+            isBrushSelected = false;
         }
 
         /// <summary>
@@ -259,6 +280,9 @@ namespace Pain.Interface.MSPaint
         public void DrawDot(PointF at)
         {
             Log($"DrawDot X: {at.X} Y: {at.Y}");
+
+            // make sure paintbrush is selected
+            RequireBrush();
 
             // move to position
             DontBreakStuffPls();
@@ -281,6 +305,9 @@ namespace Pain.Interface.MSPaint
                 return;
 
             Log($"DrawPoly Verts: {vertices.Length}");
+
+            // make sure paintbrush is selected
+            RequireBrush();
 
             // move to first vert and mouse down
             DontBreakStuffPls();
@@ -312,6 +339,19 @@ namespace Pain.Interface.MSPaint
         #endregion
 
         #region Util
+
+        /// <summary>
+        /// select the paintbrush tool if not selected
+        /// </summary>
+        void RequireBrush()
+        {
+            if(!isBrushSelected)
+            {
+                Cmd.SelectPaintBrush();
+                isBrushSelected = true;
+            }
+        }
+
         /// <summary>
         /// mouse button down abstraction.
         /// because we have the choice between LMB / Space for primary color and RMB for secondary color
