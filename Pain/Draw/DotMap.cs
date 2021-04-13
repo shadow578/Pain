@@ -237,13 +237,31 @@ namespace Pain.Draw
         #endregion
 
         #region Draw
+
+        /// <summary>
+        /// draw mode
+        /// </summary>
+        public enum DrawMode
+        {
+            /// <summary>
+            /// Draw each dot individually. may be slower
+            /// </summary>
+            Dots,
+
+            /// <summary>
+            /// create polygons and draw them
+            /// </summary>
+            Polys
+        }
+
         /// <summary>
         /// Draw the dotmap to a target
         /// </summary>
         /// <param name="target">where to draw to</param>
         /// <param name="firstColorFill">should the first color be drawn using flood- fill? (canvas has to be empty for this to work well)</param>
         /// <param name="strokeSize">the stroke size, 0-1</param>
-        public void DrawTo(IDrawTarget target, bool firstColorFill, float strokeSize = 1)
+        /// <param name="mode">the draw mode</param>
+        public void DrawTo(IDrawTarget target, bool firstColorFill, float strokeSize = 1, DrawMode mode = DrawMode.Dots)
         {
             strokeSize = Math.Clamp(strokeSize, 0, 1);
             double totalDots = TotalDots;
@@ -274,7 +292,11 @@ namespace Pain.Draw
                     }
 
                     // draw all dots
-                    dotsDrawn += DrawUsingPolys(target, dotMap[c], totalDots, dotsDrawn);
+                    if (mode == DrawMode.Dots)
+                        dotsDrawn += DrawUsingDots(target, dotMap[c], totalDots, dotsDrawn);
+                    else
+                        dotsDrawn += DrawUsingPolys(target, dotMap[c], totalDots, dotsDrawn);
+
                     ReportProgress(dotsDrawn / totalDots);
                 }
         }
@@ -324,17 +346,21 @@ namespace Pain.Draw
                 // otherwise, draw the polygon, and start a new one
                 if (MathF.Abs(dist) > oneDotDiagonally)
                 {
-                    // remove all dots in the poly that are not needed for the path
-                    // always keep the first and last dot
+                    //remove all dots in the poly that are in a direct line to another dot in the poly
+                    //such that they are not needed for drawing
+                    PointF l = poly[0];
                     for (int i = 1; i < (poly.Count - 1); i++)
                     {
                         PointF c = poly[i];
-                        foreach (PointF n in poly)
-                            if (MathF.Abs(c.Y - n.Y) <= dotH)
-                            {
-                                poly.Remove(c);
-                                break;
-                            }
+
+                        if (MathF.Abs(c.X - l.X) < dotW
+                            || MathF.Abs(c.Y - l.Y) < dotH)
+                        {
+                            poly.RemoveAt(i);
+                            continue;
+                        }
+
+                        l = c;
                     }
 
                     // draw and reset poly
