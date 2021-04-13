@@ -120,6 +120,27 @@ namespace Pain.Draw
         /// </summary>
         public event Action<double> Progress;
 
+        /// <summary>
+        /// clone the dotmap
+        /// </summary>
+        /// <returns>the cloned map</returns>
+        public DotMap Clone()
+        {
+            // clone dict
+            Dictionary<Color, List<PointF>> clonedDots = new Dictionary<Color, List<PointF>>();
+            foreach (Color c in dotMap.Keys)
+            {
+                // create entry for color
+                clonedDots.Add(c, new List<PointF>());
+
+                //add all dots
+                foreach (PointF p in dotMap[c])
+                    clonedDots[c].Add(p);
+            }
+
+            return new DotMap(clonedDots, new SizeF(mapSize.Width, mapSize.Height));
+        }
+
         #region Optimize
         /// <summary>
         /// optimize the dotmap to use less unique colors.
@@ -175,6 +196,44 @@ namespace Pain.Draw
                 // remove mapped color from dict
                 dotMap[colorToMap].Clear();
                 dotMap.Remove(colorToMap);
+            }
+
+            return this;
+        }
+        #endregion
+
+        #region Diff
+
+        /// <summary>
+        /// removes all dots but the ones that are different.
+        /// call this AFTER Optimizations, but BEFORE sorting
+        /// </summary>
+        /// <param name="other">the other (previous) dotmap</param>
+        /// <param name="deltaETarget">delta e below which two colors are threated as equal</param>
+        /// <param name="coordFuzz">fuzzyness for coordinate comparisions</param>
+        /// <returns>dotmap instance</returns>
+        public DotMap Diff(DotMap other, float deltaETarget = 1f, float coordFuzz = 0.01f)
+        {
+            // check they have the same size
+            if (other.mapSize != mapSize)
+                throw new ArgumentException("dotmaps dont have the same size");
+
+            // squared to safe sqrt
+            //coordFuzz *= coordFuzz;
+
+            // every color
+            foreach (Color cs in dotMap.Keys)
+            {
+                // every color of the other map with deltaE of < 1
+                foreach (Color co in other.dotMap.Keys)
+                    if (ColorComparisions.DeltaE(cs, co) <= deltaETarget)
+                    {
+                        // these two colors are equal, remove all duplicate dots
+                        foreach (PointF dotO in other.dotMap[co])
+                            for (int i = 0; i < dotMap[cs].Count; i++)
+                                if (DotDistanceSq(dotMap[cs][i], dotO) <= coordFuzz)
+                                    dotMap[cs].Remove(dotMap[cs][i]);
+                    }
             }
 
             return this;
@@ -266,7 +325,7 @@ namespace Pain.Draw
             strokeSize = Math.Clamp(strokeSize, 0, 1);
             double totalDots = TotalDots;
             double dotsDrawn = 0;
-            bool useFill = !firstColorFill;
+            bool useFill = firstColorFill;
 
             // set stroke size
             target.SetStroke(strokeSize);

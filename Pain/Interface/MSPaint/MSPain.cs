@@ -153,6 +153,21 @@ namespace Pain.Interface.MSPaint
         /// </summary>
         private bool isBrushSelected = false;
 
+        /// <summary>
+        /// the current primary color
+        /// </summary>
+        private Color? currentPrimary = null;
+
+        /// <summary>
+        /// the current secondary color
+        /// </summary>
+        private Color? currentSecondary = null;
+
+        /// <summary>
+        /// The currently selected stroke size
+        /// </summary>
+        private int? currentStroke = null;
+
         #region IDrawTarget
 
         /// <summary>
@@ -173,10 +188,14 @@ namespace Pain.Interface.MSPaint
         /// <param name="color">the color to set</param>
         public void SetPrimaryColor(Color color)
         {
+            if (currentPrimary.HasValue && currentPrimary.Equals(color))
+                return;
+
             Log("SetPrimaryColor");
             Cmd.SelectPrimaryColor();
             Cmd.SetColorRGB(color.R, color.G, color.B);
             isBrushSelected = false;
+            currentPrimary = color;
         }
 
         /// <summary>
@@ -186,10 +205,14 @@ namespace Pain.Interface.MSPaint
         /// <param name="color">the color to set</param>
         public void SetSecondaryColor(Color color)
         {
+            if (currentSecondary.HasValue && currentSecondary.Equals(color))
+                return;
+
             Log("SetSecondaryColor");
             Cmd.SelectSecondaryColor();
             Cmd.SetColorRGB(color.R, color.G, color.B);
             isBrushSelected = false;
+            currentSecondary = color;
         }
 
         /// <summary>
@@ -253,9 +276,13 @@ namespace Pain.Interface.MSPaint
             RequireBrush();
 
             int w = (int)Math.Floor(width * 3);
+            if (currentStroke.HasValue && currentStroke == w)
+                return;
+
             Log($"SetStroke {width} ({w})");
             Cmd.SetStrokeWidth(w);
             isBrushSelected = false;
+            currentStroke = w;
         }
 
         /// <summary>
