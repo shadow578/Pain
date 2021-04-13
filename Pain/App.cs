@@ -41,7 +41,7 @@ namespace Pain
             // create dotmap
             Console.WriteLine("preparing dotmap...");
             DotMap dotMap = DotMap.Of(imageToDraw, pain.Bounds.Size, .2f, 2)
-                .Optimize(128, ColorComparisions.DeltaE);
+                .Optimize(64, ColorComparisions.DeltaE);
 
             // wait for user
             Console.WriteLine("Ready. Enter to Start");
@@ -57,17 +57,23 @@ namespace Pain
             }
             Console.WriteLine();
 
-            // start drawing and stop time for draw
-            dotMap.Progress += pog =>
-            {
-                Console.Title = $"Press ESC to stop | {pog * 100:0.0}% done";
-            };
-
+            // setup progress display
             Stopwatch sw = new Stopwatch();
             sw.Start();
+            dotMap.Progress += pog =>
+            {
+                Console.Title = $"Press ESC to stop | {pog * 100:0.0}% done | {sw.Elapsed.TotalSeconds}s elapsed";
+            };
 
+            // draw main dotmap
             dotMap.DrawTo(pain, false);
 
+            // draw a nice black outline around our image
+            Draw.Path.Of(new RectangleF(0, 0, 1, 1))
+                .SetColor(Color.Black)
+                .DrawTo(pain);
+
+            // done, show time elapsed
             sw.Stop();
             Console.WriteLine($"Done after {sw.Elapsed} ({sw.Elapsed.TotalSeconds:0.0} seconds)");
         }

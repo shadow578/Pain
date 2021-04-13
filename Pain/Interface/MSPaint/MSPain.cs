@@ -287,13 +287,22 @@ namespace Pain.Interface.MSPaint
             Mouse.MoveTo(PointToScreen(vertices[0]));
             MoveSleep();
             MouseDown(paintInPrimary);
+            MoveSleep();
 
             // each vert
             foreach (PointF vert in vertices)
             {
-                // move to position
+                Log($"Vert: X: {vert.X} Y: {vert.Y}");
                 DontBreakStuffPls();
+
+                // move to position
                 Mouse.MoveTo(PointToScreen(vert));
+                MoveSleep();
+
+                // release mouse for a moment
+                // this seems to resolve problems with paint not wanting to draw lines sometimes
+                MouseUp(paintInPrimary);
+                MouseDown(paintInPrimary);
                 MoveSleep();
             }
 
