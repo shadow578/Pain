@@ -65,17 +65,25 @@ namespace Pain.Interface.MSPaint
 
             // get pos and make user release button
             Point topLeft = Mouse.GetPosition();
-            Console.WriteLine("\nOk, release now");
-            while (Keyboard.IsDown(VK.LeftButton))
-                Thread.Sleep(50);
+            //Console.WriteLine("\nOk, release now");
+            //while (Keyboard.IsDown(VK.LeftButton))
+            //    Thread.Sleep(50);
 
             // get bottom right
-            Console.WriteLine("Move the cursor to the BOTTOM RIGHT corner of your safe zone and click LMB");
-            while (!Keyboard.IsDown(VK.LeftButton))
+            Console.WriteLine("\nOk, Move the cursor to the BOTTOM RIGHT corner of your safe zone and release LMB");
+            while (Keyboard.IsDown(VK.LeftButton))
             {
+                // get second point
                 Point p = Mouse.GetPosition();
-                Console.Write($"Position: {p.X} / {p.Y}      ");
+
+                // calculate zone
+                Rectangle zonePre = new Rectangle(topLeft.X, 
+                    topLeft.Y, 
+                    Math.Clamp(p.X - topLeft.X, 0, int.MaxValue),
+                    Math.Clamp(p.Y - topLeft.Y, 0, int.MaxValue));
+                Console.Write($"Position: {p.X} / {p.Y} \t Zone: X: {zonePre.X} Y: {zonePre.Y} W: {zonePre.Width} H: {zonePre.Height}    ");
                 Console.CursorLeft = 0;
+
                 Thread.Sleep(50);
             }
 
