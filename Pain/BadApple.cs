@@ -1,11 +1,9 @@
 ﻿using Pain.Driver;
 using Pain.Interface.MSPaint;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Text;
 using System.Threading;
 
 namespace Pain
@@ -13,9 +11,9 @@ namespace Pain
     /// <summary>
     /// I'm sick of debugging rn, so i'll just cheat a bit :P
     /// </summary>
-    public class CheatApp
+    public class BadApple
     {
-        public static void CheatMain()
+        public static void BadAppleMain()
         {
             // get video frames path
             Console.Write("Enter frames dir (create using ffmpeg, format png): ");
@@ -59,13 +57,19 @@ namespace Pain
 
             // create a DIFF dotmap for every image in the path
             Bitmap prev = null;
+            int frameNo = 1;
+            Stopwatch sw = new Stopwatch();
             foreach (string img in Directory.EnumerateFiles(framesDir, "*.png", SearchOption.TopDirectoryOnly))
             {
                 // load image as bitmap
                 using (Bitmap bmp = new Bitmap(img))
                 {
                     // draw
-                    Bitmap nPrev = RenderWithDots(bmp, prev, 0.2f, primary, secondary);
+                    sw.Restart();
+                    Bitmap nPrev = RenderWithDots(bmp, prev, 0.15f, primary, secondary);
+                    sw.Stop();
+                    Console.WriteLine($"Frame {frameNo} took {sw.Elapsed.TotalSeconds:0.00} s");
+                    frameNo++;
 
                     // dispose previous prev
                     prev?.Dispose();
@@ -106,22 +110,15 @@ namespace Pain
             for (int x = 0; x < scaledW; x++)
             {
                 float xNorm = (float)x / scaledW;
-                Color? alreadyPressed = null;
-                bool? lastMouseButton = null;
+                bool? currentlyPressedMouseButton = null;
                 for (int y = 0; y < scaledH; y++)
                 {
                     // check if the pixel in the previous bitmap is (more or less) equal
                     // skip if yes
                     Color c = scaled.GetPixel(x, y);
-                    if (prevScaled != null
-                        && ColorComparisions.DeltaE(c, prevScaled.GetPixel(x, y)) <= 1f)
-                        continue;
-
-                    // only change if different color
-                    if (c.Equals(alreadyPressed))
-                        continue;
-
-                    alreadyPressed = c;
+                    //if (prevScaled != null
+                    //    && ColorComparisions.DeltaE(c, prevScaled.GetPixel(x, y)) <= 2f)
+                    //    continue;
 
                     // normalize position
                     float yNorm = (float)y / scaledH;
@@ -131,25 +128,34 @@ namespace Pain
                     float deltaESecondary = ColorComparisions.DeltaE(c, secondary);
                     bool usePrimary = deltaEPrimary <= deltaESecondary;
 
+                    // only draw a new dot if changed
+                    if (currentlyPressedMouseButton.HasValue && usePrimary == currentlyPressedMouseButton.Value)
+                        continue;
+
                     // draw dot
                     //Log($"Dot X: {xNorm} Y: {yNorm}");
                     DontBreakStuffPls();
-                    if (lastMouseButton.HasValue)
-                    {
-                        MouseUp(lastMouseButton.Value);
-                        MoveSleep();
-                    }
                     Mouse.MoveTo(PointToScreen(new PointF(xNorm, yNorm)));
                     MoveSleep();
+                    if (currentlyPressedMouseButton.HasValue)
+                        MouseUp(currentlyPressedMouseButton.Value);
+
                     MouseDown(usePrimary);
-                    lastMouseButton = usePrimary;
+                    MoveSleep();
+                    currentlyPressedMouseButton = usePrimary;
                 }
 
+                DontBreakStuffPls();
                 Mouse.MoveTo(PointToScreen(new PointF(xNorm, 1f)));
                 MoveSleep();
-                if (lastMouseButton.HasValue)
-                    MouseUp(lastMouseButton.Value);
+                if (currentlyPressedMouseButton.HasValue)
+                    MouseUp(currentlyPressedMouseButton.Value);
             }
+
+            // force refresh paint
+            Window.ForceRepaintForegroundWindow();
+            Keyboard.SendVirtualKey(VK.OEMWSCtrl | VK.A, VK.Escape);
+            Cmd.SelectPaintBrush();
 
             // return the scaled image for the next call
             return scaled;
@@ -216,7 +222,6 @@ namespace Pain
             return zone;
         }
 
-
         #region Paint Driver
         /// <summary>
         /// path to the paint executeable
@@ -226,7 +231,7 @@ namespace Pain
         /// <summary>
         /// millisecond delay between mouse moves
         /// </summary>
-        static int MoveDelay { get; set; } = 0;
+        static double MoveDelay { get; set; } = 0;//0.00005;
 
         /// <summary>
         /// the bounds we are allowed to work in
@@ -278,12 +283,26 @@ namespace Pain
                 Mouse.ReleaseRightButton();
         }
 
+        static Stopwatch sleepSW = new Stopwatch();
+
         /// <summary>
         /// sleep for the move delay
         /// </summary>
         static void MoveSleep()
         {
-            Thread.Sleep(MoveDelay);
+            //Thread.Sleep(MoveDelay);
+            if (MoveDelay <= 0)
+                return;
+
+            // calc ticks to wait for
+            long ticks = (long)(MoveDelay * Stopwatch.Frequency);
+            sleepSW.Restart();
+
+            // idle- sleep, as Thread.Sleep is not precise
+            while (sleepSW.ElapsedTicks < ticks) ;
+
+            // dont have to have this running
+            sleepSW.Stop();
         }
 
         /// <summary>

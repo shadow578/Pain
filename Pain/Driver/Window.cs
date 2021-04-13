@@ -10,6 +10,18 @@ namespace Pain.Driver
     public static class Window
     {
         /// <summary>
+        /// Force the foreground window to repaint
+        /// </summary>
+        public static void ForceRepaintForegroundWindow()
+        {
+            // get foreground process pointer
+            IntPtr hWndForeground = LowLevel.GetForegroundWindow();
+
+            // force the repaint
+            LowLevel.SendMessage(hWndForeground, LowLevel.WmPaint, 0, 0);
+        }
+
+        /// <summary>
         /// get the process that is the current foreground window
         /// </summary>
         /// <returns>the process of the foreground window</returns>
@@ -30,6 +42,11 @@ namespace Pain.Driver
         /// </summary>
         private static class LowLevel
         {
+            public const int WmPaint = 0x000F;
+
+            [DllImport("User32.dll")]
+            public static extern long SendMessage(IntPtr hWnd, uint msg, int wParam, int lParam);
+
             [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
             public static extern IntPtr GetForegroundWindow();
 

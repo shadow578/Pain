@@ -18,7 +18,7 @@ namespace Pain
         {
             if (true)
             {
-                CheatApp.CheatMain();
+                BadApple.BadAppleMain();
                 return;
             }
 
