@@ -41,7 +41,7 @@ namespace Pain
             // create dotmap
             Console.WriteLine("preparing dotmap...");
             DotMap dotMap = DotMap.Of(imageToDraw, pain.Bounds.Size, .2f, 2)
-                .Optimize(64, ColorComparisions.DeltaE);
+                .Optimize(128, ColorComparisions.DeltaE);
 
             // wait for user
             Console.WriteLine("Ready. Enter to Start");

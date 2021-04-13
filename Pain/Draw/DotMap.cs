@@ -114,6 +114,7 @@ namespace Pain.Draw
             dotMap = dotsDict;
         }
 
+        #region Optimize
         /// <summary>
         /// optimize the dotmap to use less unique colors.
         /// Uses <see cref="ColorComparisions.Euclidean(Color, Color)"/> comparison function
@@ -172,7 +173,65 @@ namespace Pain.Draw
 
             return this;
         }
+        #endregion
 
+        #region Sort/Shuffle
+
+        /// <summary>
+        /// shuffle the dots of each color so that there is no left- to- right "seam" visible.
+        /// This may slow down drawing
+        /// </summary>
+        /// <returns>instance reference</returns>
+        public DotMap Shuffle()
+        {
+            Random rnd = new Random();
+
+            // every color
+            foreach (Color c in dotMap.Keys)
+            {
+                // shuffle list 
+                // based on https://stackoverflow.com/a/1262619
+                List<PointF> dots = dotMap[c];
+                int n = dots.Count;
+                while(n > 1)
+                {
+                    n--;
+                    int k = rnd.Next(n + 1);
+                    PointF x = dots[k];
+                    dots[k] = dots[n];
+                    dots[n] = x;
+                }
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Sort the Dots of each color so that dots are drawn left- to- right
+        /// </summary>
+        /// <returns>instance reference</returns>
+        public DotMap Sort()
+        {
+            // every color
+            foreach (Color c in dotMap.Keys)
+            {
+                dotMap[c].Sort((d1, d2) =>
+                {
+                    // Y 0 ==> Y 1
+                    if (d1.X.Equals(d2.X))
+                        return d1.Y.CompareTo(d2.Y);
+
+                    // X 0 ==> X 1
+                    return d1.X.CompareTo(d2.X);
+                });
+
+            }
+
+            return this;
+        }
+        #endregion
+
+        #region Draw
         /// <summary>
         /// Draw the dotmap to a target
         /// </summary>
@@ -238,6 +297,7 @@ namespace Pain.Draw
 
             return dots.Count;
         }
+        #endregion
 
         /// <summary>
         /// report the progress to the progress listener
